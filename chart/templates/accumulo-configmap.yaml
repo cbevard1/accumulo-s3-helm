@@ -222,44 +222,23 @@ data:
     done
 
     if [[ "${HOSTNAME}" =~ "accumulo-gc" ]]; then
-      #/opt/accumulo/bin/accumulo-service manager start
-      echo "master"
-      cd bin
-      echo $(pwd)
-      while true;
-        do sleep 300;
-      done;
-      tail -f /opt/accumulo/conf/*
+      /opt/accumulo/bin/accumulo-service gc start
+      tail -f /opt/accumulo/logs/*
     fi
 
     if [[ "${HOSTNAME}" =~ "accumulo-monitor" ]]; then
-      #/opt/accumulo/bin/accumulo-service manager start
-      echo "master"
-      cd bin
-      echo $(pwd)
-      while true;
-        do sleep 300;
-      done;
-      tail -f /opt/accumulo/conf/*
+      /opt/accumulo/bin/accumulo-service monitor start
+      tail -f /opt/accumulo/logs/*
     fi
 
     if [[ "${HOSTNAME}" =~ "accumulo-manager" ]]; then
-      #/opt/accumulo/bin/accumulo-service manager start
-      echo "master"
-      cd bin
-      echo $(pwd)
-      while true;
-        do sleep 300;
-      done;
-      tail -f /opt/accumulo/conf/*
+      /opt/accumulo/bin/accumulo-service manager start
+      tail -f /opt/accumulo/logs/*
     fi
 
     if [[ "${HOSTNAME}" =~ "accumulo-ts" ]]; then
-      #/opt/accumulo/bin/accumulo-service tserver start
-      echo "worker"
-      while true;
-        do sleep 300;
-      done;
+      /opt/accumulo/bin/accumulo-service tserver start
+      tail -f /opt/accumulo/logs/*
     fi
 
     #tail -f /opt/accumulo/logs/*
