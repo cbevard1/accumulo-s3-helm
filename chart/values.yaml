@@ -1,0 +1,31 @@
+# The base accumulo image to use for all components.
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:latest
+
+# Select anitAffinity as either hard or soft, default is hard
+antiAffinity: "soft"
+
+s3:
+  bucket: "accumulo.s3"
+  key:
+  secret:
+
+accumulo:
+  manager:
+    replicas: 1
+    resources:
+      requests:
+        memory: "5Gi"
+        cpu: "1000m"
+  tserver:
+    replicas: 3
+    resources:
+      requests:
+        memory: "5Gi"
+        cpu: "1000m"
+  volumes: "accS3nf://accumulo.s3/accumulo"
+  username: "root"
+  passwd: "root"
+  instance_name: "test"
+
+zookeeper:
+  host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"

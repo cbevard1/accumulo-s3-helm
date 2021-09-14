@@ -1,0 +1,28 @@
+# A headless service to create DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "accumulo.fullname" . }}-ts-svc
+  labels:
+    app: {{ template "accumulo.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: accumulo-ts
+spec:
+  clusterIP: "None"
+  ports:
+  - port: 4560
+    name: monitor
+  - port: 9997
+    name: tserver
+  - port: 9998
+    name: garbage-collector
+  - port: 12234
+    name: tracer
+  - port: 10002
+    name: ts-replication
+  selector:
+    app: {{ template "accumulo.name" . }}
+    release: {{ .Release.Name }}
+    component: accumulo-ts

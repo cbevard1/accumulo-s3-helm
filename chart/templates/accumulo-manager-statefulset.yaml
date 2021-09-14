@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "accumulo.fullname" . }}-manager
+  labels:
+    app: {{ template "accumulo.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: accumulo-manager
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "accumulo.name" . }}
+  serviceName: {{ template "accumulo.fullname" . }}-manager-svc
+  replicas: {{ .Values.accumulo.manager.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "accumulo.name" . }}
+        release: {{ .Release.Name }}
+        component: accumulo-manager
+    spec:
+      dnsConfig:
+        searches:
+        - {{ template "accumulo.fullname" . }}-ts.accumulo.svc.cluster.local
+        - {{ template "accumulo.fullname" . }}-manager.accumulo.svc.cluster.local
+        - {{ template "accumulo.fullname" . }}-gc.accumulo.svc.cluster.local
+        - {{ template "accumulo.fullname" . }}-monitor.accumulo.svc.cluster.local
+      affinity:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: accumulo-manager
+        image: {{ .Values.accumuloImage }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.s3.key }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.s3.secret }}
+        command:
+        - "/bin/bash"
+        - "/tmp/accumulo-config/bootstrap.sh"
+        resources:
+{{ toYaml .Values.accumulo.manager.resources | indent 10 }}
+#        readinessProbe:
+#          httpGet:
+#            path: /
+#            port: 9999
+#          initialDelaySeconds: 5
+#          timeoutSeconds: 2
+#        livenessProbe:
+#          httpGet:
+#            path: /
+#            port: 9999
+#          initialDelaySeconds: 10
+#          timeoutSeconds: 2
+        volumeMounts:
+        - name: accumulo-config
+          mountPath: /tmp/accumulo-config
+      volumes:
+      - name: accumulo-config
+        configMap:
+          name: accumulo-configmap
