@@ -11,18 +11,42 @@ metadata:
     component: accumulo-manager
 spec:
   ports:
-  - port: 9995
-    name: manager-ui
-  - port: 9997
-    name: tserver
-  - port: 9998
-    name: garbage-collector
-  - port: 9999
-    name: manager
-  - port: 12234
-    name: traceer
-  - port: 10001
-    name: manager-replication
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: http-monitor
+      protocol: TCP
+      port: 9995
+      targetPort: 9995
+    - name: tablet-server
+      protocol: TCP
+      port: 9997
+      targetPort: 9997
+    - name: accumulo-gc
+      protocol: TCP
+      port: 9998
+      targetPort: 9998
+    - name: master-server
+      protocol: TCP
+      port: 9999
+      targetPort: 9999
+    - name: tracer
+      protocol: TCP
+      port: 12234
+      targetPort: 12234
+    - name: accumulo-proxy
+      protocol: TCP
+      port: 42424
+      targetPort: 42424
+    - name: master-replication
+      protocol: TCP
+      port: 10001
+      targetPort: 10001
+    - name: tablet-replication
+      protocol: TCP
+      port: 10002
+      targetPort: 10002
   clusterIP: "None"
   selector:
     app: {{ template "accumulo.name" . }}

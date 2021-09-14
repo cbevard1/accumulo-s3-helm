@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "accumulo.fullname" . }}-ts-svc
+  name: {{ template "accumulo.fullname" . }}-gc-svc
   labels:
     app: {{ template "accumulo.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    component: accumulo-ts
+    component: accumulo-gc
 spec:
   clusterIP: "None"
   ports:
@@ -51,4 +51,4 @@ spec:
   selector:
     app: {{ template "accumulo.name" . }}
     release: {{ .Release.Name }}
-    component: accumulo-ts
+    component: accumulo-gc

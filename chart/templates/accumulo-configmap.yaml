@@ -196,19 +196,52 @@ data:
       fi
     done
 
-    # make managers config
-    managers_end=$(({{ .Values.accumulo.manager.replicas }} - 1))
-    for i in $(seq 0 $managers_end);
+    # make gc config
+    gc_end=$(({{ .Values.accumulo.gc.replicas }} - 1))
+    for i in $(seq 0 $gc_end);
+      do
+        echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-gc-svc" >> /opt/accumulo/conf/gc;
+    done
+    # make manager config
+    manager_end=$(({{ .Values.accumulo.manager.replicas }} - 1))
+    for i in $(seq 0 $manager_end);
       do
         echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-manager-svc" >> /opt/accumulo/conf/managers;
     done
-
+    # make monitor config
+    monitor_end=$(({{ .Values.accumulo.monitor.replicas }} - 1))
+    for i in $(seq 0 $monitor_end);
+      do
+        echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-monitor-svc" >> /opt/accumulo/conf/monitor;
+    done
     # make tserver config
     tserver_end=$(({{ .Values.accumulo.tserver.replicas }} - 1))
     for i in $(seq 0 $tserver_end);
       do
         echo "{{ template "accumulo.fullname" . }}-ts-$i.{{ template "accumulo.fullname" . }}-ts-svc" >> /opt/accumulo/conf/tservers;
     done
+
+    if [[ "${HOSTNAME}" =~ "accumulo-gc" ]]; then
+      #/opt/accumulo/bin/accumulo-service manager start
+      echo "master"
+      cd bin
+      echo $(pwd)
+      while true;
+        do sleep 300;
+      done;
+      tail -f /opt/accumulo/conf/*
+    fi
+
+    if [[ "${HOSTNAME}" =~ "accumulo-monitor" ]]; then
+      #/opt/accumulo/bin/accumulo-service manager start
+      echo "master"
+      cd bin
+      echo $(pwd)
+      while true;
+        do sleep 300;
+      done;
+      tail -f /opt/accumulo/conf/*
+    fi
 
     if [[ "${HOSTNAME}" =~ "accumulo-manager" ]]; then
       #/opt/accumulo/bin/accumulo-service manager start

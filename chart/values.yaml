@@ -10,7 +10,19 @@ s3:
   secret:
 
 accumulo:
+  gc:
+    replicas: 1
+    resources:
+      requests:
+        memory: "5Gi"
+        cpu: "1000m"
   manager:
+    replicas: 1
+    resources:
+      requests:
+        memory: "5Gi"
+        cpu: "1000m"
+  monitor:
     replicas: 1
     resources:
       requests:
