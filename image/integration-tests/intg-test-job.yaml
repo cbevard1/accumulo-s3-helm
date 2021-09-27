@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+ name: acc-s3-intg
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: acc-s3-intg
+        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:latest
+        command:
+          - "/bin/bash"
+          - "/scripts/run.sh"
+        env:
+          - name: REPO_NAME
+            value: accumulo
+          - name: REPO_BRANCH
+            value: cnbevar
+          - name: REPO_LINK
+            value: https://github.com/Accumulo-S3/accumulo/archive/cnbevar.zip
+        volumeMounts:
+          - name: intg-test-config
+            mountPath: /scripts
+      volumes:
+        - name: intg-test-config
+          configMap:
+            name: intg-test-configmap

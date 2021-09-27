@@ -10,9 +10,7 @@ RUN apt-get update; \
     apt-get install -y make; \
     apt-get install -y g++;
 
-RUN wget ${REPO_LINK}; \
-    unzip ${REPO_BRANCH}.zip;
+RUN mkdir /source; \
+    mkdir /scripts;
 
-
-WORKDIR /${REPO_NAME}-${REPO_BRANCH}
-
+WORKDIR /source

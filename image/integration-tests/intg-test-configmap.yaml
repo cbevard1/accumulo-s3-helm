@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: intg-test-configmap
+data:
+  run.sh: |
+    echo "--download the repo..."
+    wget "$REPO_LINK" /source
+    cd /source
+    echo "ls ./"
+    ls ./
+    echo "--unzip the downloaded file ($REPO_BRANCH)"
+    unzip "$REPO_BRANCH.zip"
+    echo "--move into the unzipped dir ($REPO_NAME-$REPO_BRANCH)"
+    cd $REPO_NAME-$REPO_BRANCH
+    echo "--run mvn test"
+    mvn -Dtest=ClientS3IntgTest test
