@@ -6,6 +6,14 @@ spec:
   ttlSecondsAfterFinished: 300
   template:
     spec:
+      dnsConfig:
+        searches:
+#        - { { template "accumulo.fullname" . } }-gc-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-manager-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
+        - accumulo-manager-svc.accumulo.svc.cluster.local
+        - accumulo-ts-svc.accumulo.svc.cluster.local
       restartPolicy: Never
       containers:
       - name: acc-s3-intg
@@ -19,7 +27,18 @@ spec:
           - name: REPO_BRANCH
             value: cnbevar
           - name: REPO_LINK
-            value: https://github.com/Accumulo-S3/accumulo/archive/cnbevar.zip
+            value: https://github.com/cbevard1/accumulo/archive/cnbevar.zip
+          - name: AWS_ACCESS_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: intg-test-configmap
+                key: AWS_ACCESS_KEY
+          - name: AWS_SECRET_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: intg-test-configmap
+                # Specify the key associated with the value
+                key: AWS_SECRET_KEY
         volumeMounts:
           - name: intg-test-config
             mountPath: /scripts
