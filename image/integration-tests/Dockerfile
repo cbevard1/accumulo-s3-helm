@@ -1,7 +1,7 @@
 FROM openjdk:11
 
-ENV REPO_NAME=accumulo
-ENV REPO_BRANCH=main
+ENV REPO_NAME=accumulo-s3-fs
+ENV REPO_BRANCH=2.0.1
 ENV REPO_LINK=https://github.com/Accumulo-S3/${REPO_NAME}/archive/${REPO_BRANCH}.zip
 
 RUN apt-get update; \
@@ -10,7 +10,6 @@ RUN apt-get update; \
     apt-get install -y make; \
     apt-get install -y g++;
 
-RUN mkdir /source; \
-    mkdir /scripts;
+RUN mkdir /test
 
-WORKDIR /source
+WORKDIR /

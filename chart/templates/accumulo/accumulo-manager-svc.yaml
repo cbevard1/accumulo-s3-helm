@@ -1,0 +1,31 @@
+# A headless service to create DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "accumulo.fullname" . }}-manager-svc
+  labels:
+    app: {{ template "accumulo.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    component: {{ template "accumulo.fullname" . }}-manager
+spec:
+  ports:
+    - name: master-server
+      protocol: TCP
+      port: 9999
+      targetPort: 9999
+    - name: master-replication
+      protocol: TCP
+      port: 10001
+      targetPort: 10001
+    - name: http-monitor
+      protocol: TCP
+      port: 9995
+      targetPort: 9995
+    - name: accumulo-gc
+      protocol: TCP
+      port: 9998
+      targetPort: 9998
+  clusterIP: "None"
+  selector:
+    app: {{ template "accumulo.name" . }}
+    component: accumulo-manager

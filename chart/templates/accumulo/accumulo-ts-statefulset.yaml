@@ -1,36 +1,34 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "accumulo.fullname" . }}-gc
+  name: {{ template "accumulo.fullname" . }}-ts
   labels:
     app: {{ template "accumulo.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    component: accumulo-gc
+    component: accumulo-ts
 spec:
   selector:
     matchLabels:
       app: {{ template "accumulo.name" . }}
-  serviceName: {{ template "accumulo.fullname" . }}-gc-svc
-  replicas: {{ .Values.accumulo.gc.replicas }}
+  serviceName: {{ template "accumulo.fullname" . }}-ts-svc
+  replicas: {{ .Values.accumulo.tserver.replicas }}
   template:
     metadata:
       labels:
         app: {{ template "accumulo.name" . }}
         release: {{ .Release.Name }}
-        component: accumulo-gc
+        component: accumulo-ts
     spec:
       dnsConfig:
         searches:
-        - {{ template "accumulo.fullname" . }}-gc-svc.accumulo.svc.cluster.local
-        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-manager-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
       affinity:
       terminationGracePeriodSeconds: 0
       containers:
-      - name: accumulo-gc
+      - name: accumulo-ts
         image: {{ .Values.accumuloImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         env:
@@ -40,21 +38,9 @@ spec:
           value: {{ .Values.s3.secret }}
         command:
         - "/bin/bash"
-        - "/tmp/accumulo-config/bootstrap.sh"
+        - "/tmp/accumulo-config/tserver.sh"
         resources:
-{{ toYaml .Values.accumulo.gc.resources | indent 10 }}
-#        readinessProbe:
-#          httpGet:
-#            path: /
-#            port: 9999
-#          initialDelaySeconds: 5
-#          timeoutSeconds: 2
-#        livenessProbe:
-#          httpGet:
-#            path: /
-#            port: 9999
-#          initialDelaySeconds: 10
-#          timeoutSeconds: 2
+{{ toYaml .Values.accumulo.tserver.resources | indent 10 }}
         volumeMounts:
         - name: accumulo-config
           mountPath: /tmp/accumulo-config

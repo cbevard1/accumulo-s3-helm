@@ -1,42 +1,50 @@
 FROM openjdk:11
 
-RUN apt update; && \
-    apt install -y iproute2 build-essential; && \
-    apt-get install -y wget; \
+RUN apt update; \
+    apt install -y iproute2 build-essential wget maven;
 
-ARG ACCUMULO_VERSION="2.0.1"
-ARG HADOOP_VERSION="3.3.0"
-ARG ZOOKEEPER_VERSION="3.7.0"
+ENV ACCUMULO_VERSION=2.0.1
+ENV HADOOP_VERSION=3.3.0
+ENV ZOOKEEPER_VERSION=3.7.0
+ENV ACCUMULO_HOME=/opt/accumulo
+ENV HADOOP_HOME=/opt/hadoop
+ENV ZOOKEEPER_HOME=/opt/zookeeper
 
 ARG ACCUMULO_RELEASE_URL=https://downloads.apache.org/accumulo/${ACCUMULO_VERSION}/accumulo-${ACCUMULO_VERSION}-bin.tar.gz
 ARG HADOOP_RELEASE_URL=https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
 ARG ZOOKEEPER_RELEASE_URL=https://downloads.apache.org/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/apache-zookeeper-${ZOOKEEPER_VERSION}-bin.tar.gz
 
-RUN mkdir /tmp/accumulo; \
-    mkdir /tmp/hadoop; \
-    mkdir /tmp/zookeeper; \
-    wget ${ACCUMULO_RELEASE_URL} /tmp/accumulo; \
-    wget ${HADOOP_RELEASE_URL} /tmp/hadoop; \
-    wget ${ZOOKEEPER_RELEASE_URL} /tmp/zookeeper; \
-    tar -xf /tmp/accumulo/accumulo-${ACCUMULO_VERSION}-bin.tar.gz -C /opt/accumulo; \
-    tar -xf /tmp/hadoop/hadoop-${ACCUMULO_VERSION}-bin.tar.gz /opt/hadoop; \
-    tar -xf /tmp/zookeeper/apache-zookeeper-${ACCUMULO_VERSION}-bin.tar.gz /opt/zookeeper;
+# TODO replace branch version with release version
+#ARG S3_FILESYSTEM_VERSION=2.0.1
+#ARG S3_FILESYSTEM_URL=https://github.com/Accumulo-S3/accumulo-s3-fs/archive/refs/tags/rel/${RELEASE_VERSION}.zip
+ARG S3_FILESYSTEM_BRANCH=2.0.1
+ARG S3_FILESYSTEM_URL=https://github.com/Accumulo-S3/accumulo-s3-fs/archive/${S3_FILESYSTEM_BRANCH}.zip
 
-ENV HADOOP_HOME=/opt/hadoop
-ENV ZOOKEEPER_HOME=/opt/zookeeper
+WORKDIR /tmp
 
-RUN ln -s /opt/accumulo-${ACCUMULO_VERSION} /opt/accumulo
-RUN mkdir -p ${HADOOP_HOME}/etc/hadoop && \
-    mkdir -p ${HADOOP_HOME}/share/hadoop/client && \
-    mkdir -p ${HADOOP_HOME}/share/hadoop/common/lib && \
-    mkdir -p ${ZOOKEEPER_HOME}/lib && \
-    mkdir /opt/extralibs
-RUN mv /tmp/hadoop-${HADOOP_VERSION}/etc/hadoop/* ${HADOOP_HOME}/etc/hadoop && \
-    mv /tmp/hadoop-${HADOOP_VERSION}/share/hadoop/client/* ${HADOOP_HOME}/share/hadoop/client && \
-    mv /tmp/hadoop-${HADOOP_VERSION}/share/hadoop/common/lib/* ${HADOOP_HOME}/share/hadoop/common/lib && \
-    mv /tmp/apache-zookeeper-${ZOOKEEPER_VERSION}-bin/lib/* ${ZOOKEEPER_HOME}/lib
-ADD extralibs /opt/extralibs
+# download and install accumulo along with its hadoop+zookeeper dependencies
+RUN wget ${ACCUMULO_RELEASE_URL}; \
+    wget ${HADOOP_RELEASE_URL}; \
+    wget ${ZOOKEEPER_RELEASE_URL}; \
+    tar -xf accumulo-${ACCUMULO_VERSION}-bin.tar.gz; \
+    tar -xf hadoop-${HADOOP_VERSION}.tar.gz; \
+    tar -xf apache-zookeeper-${ZOOKEEPER_VERSION}-bin.tar.gz; \
+    mv accumulo-${ACCUMULO_VERSION} ${ACCUMULO_HOME}; \
+    mv hadoop-${HADOOP_VERSION} ${HADOOP_HOME}; \
+    mv apache-zookeeper-${ZOOKEEPER_VERSION}-bin ${ZOOKEEPER_HOME};
 
-RUN /opt/accumulo/bin/accumulo-util build-native
+# build the s3 filesystem jar
+RUN wget ${S3_FILESYSTEM_URL}; \
+    unzip ${S3_FILESYSTEM_BRANCH}.zip; \
+    cd accumulo-s3-fs-${S3_FILESYSTEM_BRANCH}; \
+    mvn clean package; \
+    mv target/*.jar ${ACCUMULO_HOME}/lib; \
+    cp /root/.m2/repository/com/amazonaws/aws-java-sdk-bundle/*/*.jar ${ACCUMULO_HOME}/lib
 
-WORKDIR /opt/accumulo/bin
+# cleanup downloaded tar files
+RUN rm -rf /tmp/*;
+
+# build native binaries
+RUN ${ACCUMULO_HOME}/bin/accumulo-util build-native
+
+WORKDIR ${ACCUMULO_HOME}

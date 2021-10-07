@@ -17,17 +17,16 @@ spec:
       restartPolicy: Never
       containers:
       - name: acc-s3-intg
-        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:latest
+        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:2.0.1
+        imagePullPolicy: Always
         command:
           - "/bin/bash"
-          - "/scripts/run.sh"
+          - "/test/run.sh"
         env:
           - name: REPO_NAME
-            value: accumulo
+            value: accumulo-s3-fs
           - name: REPO_BRANCH
-            value: cnbevar
-          - name: REPO_LINK
-            value: https://github.com/cbevard1/accumulo/archive/cnbevar.zip
+            value: 2.0.1
           - name: AWS_ACCESS_KEY
             valueFrom:
               configMapKeyRef:
@@ -37,11 +36,10 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: intg-test-configmap
-                # Specify the key associated with the value
                 key: AWS_SECRET_KEY
         volumeMounts:
           - name: intg-test-config
-            mountPath: /scripts
+            mountPath: /test
       volumes:
         - name: intg-test-config
           configMap:

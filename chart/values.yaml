@@ -1,5 +1,6 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:latest
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1
+imagePullPolicy: Always
 
 # Select anitAffinity as either hard or soft, default is hard
 antiAffinity: "soft"
@@ -34,10 +35,39 @@ accumulo:
       requests:
         memory: "5Gi"
         cpu: "1000m"
-  volumes: "accS3nf://accumulo.s3/accumulo"
+  volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
-  instance_name: "test"
+  instance_name: "s3"
 
 zookeeper:
-  host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"
+  host: zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-1.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-2.zookeeper-headless.accumulo.svc.cluster.local
+  port: 2181
+  containerPort: 2888
+  electionPort: 3888
+  replicas: 3
+
+traefik:
+  replicas: 1
+  image:
+    name: traefik
+    tag: 2.1.3
+  resources: {}
+  loglevel: DEBUG
+  service:
+    type: LoadBalancer
+    annotations: {}
+    spec: {}
+    ports:
+      web:
+        # The port HTTP(s) requests will be served on
+        port: 9995
+        nodePort: null
+      tcp:
+        # The port TCP requests will be served on. Set to `web` to share the
+        # web service port
+        port: web
+        nodePort: null
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
