@@ -1,16 +1,26 @@
-
 FROM openjdk:11
 
-RUN apt update && \
-    apt install -y iproute2 build-essential
+RUN apt update; && \
+    apt install -y iproute2 build-essential; && \
+    apt-get install -y wget; \
 
-ARG ACCUMULO_VERSION="2.1.0-SNAPSHOT-S3"
+ARG ACCUMULO_VERSION="2.0.1"
 ARG HADOOP_VERSION="3.3.0"
 ARG ZOOKEEPER_VERSION="3.7.0"
 
-ADD accumulo-${ACCUMULO_VERSION}-bin.tar.gz /opt
-ADD hadoop-${HADOOP_VERSION}.tar /tmp
-ADD apache-zookeeper-${ZOOKEEPER_VERSION}-bin.tar /tmp
+ARG ACCUMULO_RELEASE_URL=https://downloads.apache.org/accumulo/${ACCUMULO_VERSION}/accumulo-${ACCUMULO_VERSION}-bin.tar.gz
+ARG HADOOP_RELEASE_URL=https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
+ARG ZOOKEEPER_RELEASE_URL=https://downloads.apache.org/zookeeper/zookeeper-${ZOOKEEPER_VERSION}/apache-zookeeper-${ZOOKEEPER_VERSION}-bin.tar.gz
+
+RUN mkdir /tmp/accumulo; \
+    mkdir /tmp/hadoop; \
+    mkdir /tmp/zookeeper; \
+    wget ${ACCUMULO_RELEASE_URL} /tmp/accumulo; \
+    wget ${HADOOP_RELEASE_URL} /tmp/hadoop; \
+    wget ${ZOOKEEPER_RELEASE_URL} /tmp/zookeeper; \
+    tar -xf /tmp/accumulo/accumulo-${ACCUMULO_VERSION}-bin.tar.gz -C /opt/accumulo; \
+    tar -xf /tmp/hadoop/hadoop-${ACCUMULO_VERSION}-bin.tar.gz /opt/hadoop; \
+    tar -xf /tmp/zookeeper/apache-zookeeper-${ACCUMULO_VERSION}-bin.tar.gz /opt/zookeeper;
 
 ENV HADOOP_HOME=/opt/hadoop
 ENV ZOOKEEPER_HOME=/opt/zookeeper
