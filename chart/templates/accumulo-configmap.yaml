@@ -123,6 +123,9 @@ data:
     ## Trace password
     trace.password=secret
 
+    ## Use S3LogCloser
+    master.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
+
   accumulo-client.properties: |
     instance.name={{ .Values.accumulo.instance_name }}
     instance.zookeepers={{ .Values.zookeeper.host }}
