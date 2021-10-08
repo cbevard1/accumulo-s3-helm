@@ -34,7 +34,7 @@ accumulo:
       requests:
         memory: "5Gi"
         cpu: "1000m"
-  volumes: "accS3nf://accumulo.s3/accumulo"
+  volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
   instance_name: "test"
