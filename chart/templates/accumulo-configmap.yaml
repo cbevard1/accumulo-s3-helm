@@ -109,7 +109,8 @@ data:
     instance.volumes={{ .Values.accumulo.volumes }}
     
     # Configure FS implementations to be used by Accumulo
-    general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
+    #general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
+    general.volume.chooser=org.apache.accumulo.server.fs.PreferredVolumeChooser
     general.custom.volume.preferred.default=accS3nf://{{ .Values.s3.bucket }}/accumulo
     general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
     
@@ -235,7 +236,7 @@ data:
     fi
 
     if [[ "${HOSTNAME}" =~ "accumulo-manager" ]]; then
-      /opt/accumulo/bin/accumulo-service manager start
+      /opt/accumulo/bin/accumulo-service master start
       tail -f /opt/accumulo/logs/*
     fi
 

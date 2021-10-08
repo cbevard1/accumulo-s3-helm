@@ -1,5 +1,5 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1v3
 
 # Select anitAffinity as either hard or soft, default is hard
 antiAffinity: "soft"
