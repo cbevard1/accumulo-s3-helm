@@ -4,10 +4,9 @@ metadata:
   name: intg-test-configmap
 data:
   run.sh: |
-    wget "$REPO_LINK" /source
-    cd /source
-    ls ./
+    wget "$REPO_LINK"
     unzip "$REPO_BRANCH.zip"
     cd $REPO_NAME-$REPO_BRANCH
-    mvn clean install -Drat.skip=true -Dspotbugs.skip=true -DskipTests=true -DskipITs=true
-    mvn '-Dtest=org.apache.accumulo.s3.*IT' test
+    mvn integration-test
+    #mvn clean install -Drat.skip=true -Dspotbugs.skip=true -DskipTests=true -DskipITs=true
+    #mvn '-Dtest=org.apache.accumulo.s3.*IT' test
