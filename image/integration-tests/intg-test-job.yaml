@@ -17,10 +17,11 @@ spec:
       restartPolicy: Never
       containers:
       - name: acc-s3-intg
-        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:2.0.2
+        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:2.0.1
+        imagePullPolicy: Always
         command:
           - "/bin/bash"
-          - "/props/run.sh"
+          - "/test/run.sh"
         env:
           - name: REPO_NAME
             value: accumulo-s3-fs
@@ -38,7 +39,7 @@ spec:
                 key: AWS_SECRET_KEY
         volumeMounts:
           - name: intg-test-config
-            mountPath: /props
+            mountPath: /test
       volumes:
         - name: intg-test-config
           configMap:

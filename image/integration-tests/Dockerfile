@@ -10,6 +10,6 @@ RUN apt-get update; \
     apt-get install -y make; \
     apt-get install -y g++;
 
-RUN mkdir /props
+RUN mkdir /test
 
 WORKDIR /

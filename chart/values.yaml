@@ -1,5 +1,6 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1v3
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1
+imagePullPolicy: Always
 
 # Select anitAffinity as either hard or soft, default is hard
 antiAffinity: "soft"
@@ -37,7 +38,7 @@ accumulo:
   volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
-  instance_name: "test"
+  instance_name: "s3"
 
 zookeeper:
   host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"
