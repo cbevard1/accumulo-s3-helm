@@ -107,6 +107,14 @@ data:
 
   accumulo.properties: |
     instance.volumes={{ .Values.accumulo.volumes }}
+    
+    # Configure FS implementations to be used by Accumulo
+    general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
+    general.custom.volume.preferred.default=accS3nf://{{ .Values.s3.bucket }}/accumulo
+    general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
+    
+    ## Use S3LogCloser
+    master.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
 
     ## Sets location of Zookeepers
     instance.zookeeper.host={{ .Values.zookeeper.host }}
@@ -122,9 +130,6 @@ data:
 
     ## Trace password
     trace.password=secret
-
-    ## Use S3LogCloser
-    master.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
 
   accumulo-client.properties: |
     instance.name={{ .Values.accumulo.instance_name }}
@@ -156,11 +161,6 @@ data:
         <property>
             <name>fs.s3a.secret.key</name>
             <value>{{ .Values.s3.secret }}</value>
-        </property>
-
-        <property>
-            <name>general.custom.volume.preferred.logger</name>
-            <value>accS3mo://{{ .Values.s3.bucket }}/accumulo-wal</value>
         </property>
 
         <!--<property>
