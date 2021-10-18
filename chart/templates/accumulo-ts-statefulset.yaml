@@ -21,10 +21,11 @@ spec:
         release: {{ .Release.Name }}
         component: accumulo-ts
     spec:
+
       dnsConfig:
         searches:
-#        - {{ template "accumulo.fullname" . }}-gc-svc.accumulo.svc.cluster.local
-#        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
+        - {{ template "accumulo.fullname" . }}-gc-svc.accumulo.svc.cluster.local
+        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-manager-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
       affinity:

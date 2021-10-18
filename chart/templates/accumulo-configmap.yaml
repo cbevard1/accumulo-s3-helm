@@ -115,7 +115,9 @@ data:
     general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
     
     ## Use S3LogCloser
-    master.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
+    # 2.1.0 property
+    #master.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
+    master.walog.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
 
     ## Sets location of Zookeepers
     instance.zookeeper.host={{ .Values.zookeeper.host }}
