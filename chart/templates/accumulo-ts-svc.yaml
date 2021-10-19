@@ -22,5 +22,4 @@ spec:
       targetPort: 10002
   selector:
     app: {{ template "accumulo.name" . }}
-    release: {{ .Release.Name }}
     component: accumulo-ts

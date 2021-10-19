@@ -1,36 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: httpbin
-  namespace: accumulo
+  name: accumulo-ingress
   annotations:
     kubernetes.io/ingress.class: traefik
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: localhost
-    http:
+  - http:
       paths:
-      - backend:
+      - path: /
+        pathType: Prefix
+        backend:
           service:
-            name: accumulo-monitor-svc
+            name: accumulo-manager-svc
             port:
               number: 9995
-        path: /
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#  name: whoami-ingress
-#  annotations:
-#    kubernetes.io/ingress.class: traefik
-#    nginx.ingress.kubernetes.io/rewrite-target: /
-#spec:
-#  rules:
-#  - http:
-#      paths:
-#      - path: /monitor
-#        pathType: Prefix
-#        backend:
-#          service:
-#            name: accumulo-monitor-svc
-#            port:
-#              number: 9995
