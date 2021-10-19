@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-headless
+  annotations:
+    meta.helm.sh/release-name: zookeeper
+  labels:
+    app.kubernetes.io/component: zookeeper
+    app.kubernetes.io/instance: zookeeper
+    app.kubernetes.io/name: zookeeper
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: tcp-client
+    port: 2181
+    protocol: TCP
+    targetPort: client
+  - name: follower
+    port: 2888
+    protocol: TCP
+    targetPort: follower
+  - name: tcp-election
+    port: 3888
+    protocol: TCP
+    targetPort: election
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/component: zookeeper
+    app.kubernetes.io/instance: zookeeper
+    app.kubernetes.io/name: zookeeper
+  sessionAffinity: None
+  type: ClusterIP

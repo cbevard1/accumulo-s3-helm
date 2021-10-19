@@ -42,6 +42,7 @@ accumulo:
 
 zookeeper:
   host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"
+  replicas: 1
 
 traefik:
   replicas: 1
