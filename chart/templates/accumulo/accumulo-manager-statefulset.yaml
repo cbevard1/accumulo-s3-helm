@@ -7,11 +7,12 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    component: accumulo-manager
+    component: {{ template "accumulo.fullname" . }}-manager
 spec:
   selector:
     matchLabels:
       app: {{ template "accumulo.name" . }}
+      component: {{ template "accumulo.fullname" . }}-manager
   serviceName: {{ template "accumulo.fullname" . }}-manager-svc
   replicas: {{ .Values.accumulo.manager.replicas }}
   template:

@@ -41,8 +41,11 @@ accumulo:
   instance_name: "s3"
 
 zookeeper:
-  host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"
-  replicas: 1
+  host: zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-1.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-2.zookeeper-headless.accumulo.svc.cluster.local
+  port: 2181
+  containerPort: 2888
+  electionPort: 3888
+  replicas: 3
 
 traefik:
   replicas: 1

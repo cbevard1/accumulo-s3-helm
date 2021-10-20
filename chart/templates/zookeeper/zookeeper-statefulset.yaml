@@ -2,63 +2,49 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
-  annotations:
-    meta.helm.sh/release-name: zookeeper
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/component: zookeeper
     app.kubernetes.io/instance: zookeeper
     app.kubernetes.io/name: zookeeper
 spec:
-  replicas: 1 #{{ .Values.zookeeper.replicas }}
+  serviceName: zookeeper-headless
+  replicas: {{ .Values.zookeeper.replicas }}
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/component: zookeeper
       app.kubernetes.io/instance: zookeeper
       app.kubernetes.io/name: zookeeper
-  serviceName: zookeeper-headless
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app.kubernetes.io/component: zookeeper
         app.kubernetes.io/instance: zookeeper
         app.kubernetes.io/name: zookeeper
       name: zookeeper
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/component: zookeeper
-                  app.kubernetes.io/instance: zookeeper
-                  app.kubernetes.io/name: zookeeper
-              namespaces:
-              - accumulo
-              topologyKey: kubernetes.io/hostname
-            weight: 1
       containers:
       - command:
-        - bash
-        - -ec
-        - |
-          # Execute entrypoint as usual after obtaining ZOO_SERVER_ID
-          # check ZOO_SERVER_ID in persistent volume via myid
-          # if not present, set based on POD hostname
-          if [[ -f "/bitnami/zookeeper/data/myid" ]]; then
-            export ZOO_SERVER_ID="$(cat /bitnami/zookeeper/data/myid)"
-          else
-            HOSTNAME=`hostname -s`
-            if [[ $HOSTNAME =~ (.*)-([0-9]+)$ ]]; then
-              ORD=${BASH_REMATCH[2]}
-              export ZOO_SERVER_ID=$((ORD + 1 ))
+          - bash
+          - -ec
+          - |
+            # Execute entrypoint as usual after obtaining ZOO_SERVER_ID
+            # check ZOO_SERVER_ID in persistent volume via myid
+            # if not present, set based on POD hostname
+            if [[ -f "/bitnami/zookeeper/data/myid" ]]; then
+              export ZOO_SERVER_ID="$(cat /bitnami/zookeeper/data/myid)"
             else
-              echo "Failed to get index from hostname $HOST"
-              exit 1
+              HOSTNAME=`hostname -s`
+              if [[ $HOSTNAME =~ (.*)-([0-9]+)$ ]]; then
+                ORD=${BASH_REMATCH[2]}
+                export ZOO_SERVER_ID=$((ORD + 1 ))
+              else
+                echo "Failed to get index from hostname $HOST"
+                exit 1
+              fi
             fi
-          fi
-          exec /entrypoint.sh /run.sh
+            exec /entrypoint.sh /run.sh
         env:
         - name: BITNAMI_DEBUG
           value: "false"
@@ -88,7 +74,10 @@ spec:
         - name: ZOO_MAX_SESSION_TIMEOUT
           value: "40000"
         - name: ZOO_SERVERS
-          value: zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local:2888:3888::1
+          {{- $replicaCount := int .Values.zookeeper.replicas }}
+          {{- $zkContainerPort := int .Values.zookeeper.containerPort }}
+          {{- $zkElectionPort := int .Values.zookeeper.electionPort }}
+          value: {{ range $i, $e := until $replicaCount }}zookeeper-{{ $e }}.zookeeper-headless.accumulo.svc.cluster.local:{{ $zkContainerPort }}:{{ $zkElectionPort }}::{{ add $e 1 }} {{ end }}
         - name: ZOO_ENABLE_AUTH
           value: "no"
         - name: ZOO_HEAP_SIZE
@@ -107,9 +96,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - /bin/bash
-            - -c
-            - echo "ruok" | timeout 2 nc -w 2 localhost 2181 | grep imok
+              - /bin/bash
+              - -c
+              - echo "ruok" | timeout 2 nc -w 2 localhost 2181 | grep imok
           failureThreshold: 6
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -129,9 +118,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - /bin/bash
-            - -c
-            - echo "ruok" | timeout 2 nc -w 2 localhost 2181 | grep imok
+              - /bin/bash
+              - -c
+              - echo "ruok" | timeout 2 nc -w 2 localhost 2181 | grep imok
           failureThreshold: 6
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -146,8 +135,8 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /bitnami/zookeeper
-          name: data
+          - mountPath: /bitnami/zookeeper
+            name: data
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -158,3 +147,15 @@ spec:
       terminationGracePeriodSeconds: 30
   updateStrategy:
     type: RollingUpdate
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
+      volumeMode: Filesystem
