@@ -21,6 +21,10 @@ spec:
       protocol: TCP
       port: 9995
       targetPort: 9995
+    - name: monitor
+      protocol: TCP
+      port: 50095
+      targetPort: 50095
     - name: accumulo-gc
       protocol: TCP
       port: 9998

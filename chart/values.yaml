@@ -11,20 +11,20 @@ s3:
   secret:
 
 accumulo:
+  # run the init script on startup
+  init: false
   gc:
-    replicas: 1
     resources:
       requests:
         memory: "5Gi"
         cpu: "1000m"
   manager:
-    replicas: 1
+    replicas: 2
     resources:
       requests:
         memory: "5Gi"
         cpu: "1000m"
   monitor:
-    replicas: 1
     resources:
       requests:
         memory: "5Gi"
@@ -46,28 +46,3 @@ zookeeper:
   containerPort: 2888
   electionPort: 3888
   replicas: 3
-
-traefik:
-  replicas: 1
-  image:
-    name: traefik
-    tag: 2.1.3
-  resources: {}
-  loglevel: DEBUG
-  service:
-    type: LoadBalancer
-    annotations: {}
-    spec: {}
-    ports:
-      web:
-        # The port HTTP(s) requests will be served on
-        port: 9995
-        nodePort: null
-      tcp:
-        # The port TCP requests will be served on. Set to `web` to share the
-        # web service port
-        port: web
-        nodePort: null
-  nodeSelector: { }
-  affinity: { }
-  tolerations: [ ]

@@ -28,6 +28,25 @@ spec:
         - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
       affinity:
       terminationGracePeriodSeconds: 0
+      initContainers:
+      - name: accumulo-init
+        image: {{ .Values.accumuloImage }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.s3.key }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.s3.secret }}
+        command:
+        - "/bin/bash"
+        - "/tmp/accumulo-config/init.sh"
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 0.5
+        volumeMounts:
+        - name: accumulo-config
+          mountPath: /tmp/accumulo-config
       containers:
       # manager
       - name: accumulo-manager
