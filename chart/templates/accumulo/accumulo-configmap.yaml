@@ -245,3 +245,27 @@ data:
     /bin/bash /tmp/accumulo-config/bootstrap.sh
     /opt/accumulo/bin/accumulo-service monitor start
     tail -f /opt/accumulo/logs/*
+
+  init.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    # only run init container once even with multiple managers, so on the first manager pod only
+    if [[ "${HOSTNAME}" =~ "accumulo-manager-0" ]]; then
+      if {{ .Values.accumulo.init }}; then
+        $ACCUMULO_HOME/bin/accumulo init \
+        --force \
+        --clear-instance-name \
+        --instance-name {{ .Values.accumulo.instance_name }} \
+        --password {{ .Values.accumulo.passwd }} \
+        --user {{ .Values.accumulo.username }}
+      fi
+    fi
+
+  ts-wait.sh: |
+    #!/bin/bash
+
+    echo "Waiting for manager on 9999..."
+    while ! nc -z {{ template "accumulo.fullname" . }}-manager-0 9999; do
+      sleep 0.1 # wait for 1/10 of the second before check again
+    done
