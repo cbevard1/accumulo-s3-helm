@@ -16,25 +16,33 @@ accumulo:
   gc:
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
+        memory: "500Mi"
+        cpu: 0.5
+    javaOpts:
+      memory: "'-Xmx385m' '-Xms385m'"
   manager:
     replicas: 2
     resources:
       requests:
         memory: "5Gi"
-        cpu: "1000m"
+        cpu: 2
+    javaOpts:
+      memory: "'-Xmx4g' '-Xms4g'"
   monitor:
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
+        memory: "1Gi"
+        cpu: 1
+    javaOpts:
+      memory: "'-Xmx768m' '-Xms768m'"
   tserver:
-    replicas: 3
+    replicas: 5
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
+        memory: "2Gi"
+        cpu: 2
+    javaOpts:
+      memory: "'-Xmx1536m' '-Xms1536m'"
   volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
