@@ -60,10 +60,10 @@ data:
 
     ## JVM options set for individual applications
     case "$cmd" in
-      manager|master)  JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx512m' '-Xms512m') ;;
-      monitor) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms256m') ;;
-      gc)      JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms256m') ;;
-      tserver) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx768m' '-Xms768m') ;;
+      manager|master)  JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.manager.javaOpts.memory }}) ;;
+      monitor) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.monitor.javaOpts.memory }}) ;;
+      gc)      JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.gc.javaOpts.memory }}) ;;
+      tserver) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.tserver.javaOpts.memory }}) ;;
       *)       JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms64m') ;;
     esac
 
@@ -107,9 +107,17 @@ data:
 
   accumulo.properties: |
     instance.volumes={{ .Values.accumulo.volumes }}
-    general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
+    
+    # Configure FS implementations to be used by Accumulo
+    #general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
+    general.volume.chooser=org.apache.accumulo.server.fs.PreferredVolumeChooser
     general.custom.volume.preferred.default=accS3nf://{{ .Values.s3.bucket }}/accumulo
     general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
+    
+    ## Use S3LogCloser
+    # 2.1.0 property
+    #manager.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
+    master.walog.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
 
     ## Sets location of Zookeepers
     instance.zookeeper.host={{ .Values.zookeeper.host }}
@@ -158,11 +166,6 @@ data:
             <value>{{ .Values.s3.secret }}</value>
         </property>
 
-        <property>
-            <name>general.custom.volume.preferred.logger</name>
-            <value>accS3mo://{{ .Values.s3.bucket }}/accumulo-wal</value>
-        </property>
-
         <!--<property>
           <name>fs.s3a.endpoint</name>
           <value>s3.us-east-2.amazonaws.com</value>
@@ -199,49 +202,72 @@ data:
       fi
     done
 
-    # make gc config
-    gc_end=$(({{ .Values.accumulo.gc.replicas }} - 1))
-    for i in $(seq 0 $gc_end);
-      do
-        echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-gc-svc" >> /opt/accumulo/conf/gc;
-    done
     # make manager config
     manager_end=$(({{ .Values.accumulo.manager.replicas }} - 1))
     for i in $(seq 0 $manager_end);
       do
-        echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-manager-svc" >> /opt/accumulo/conf/managers;
+        #echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/managers;
+        echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/masters;
+        echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/gc;
+        echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/monitor;
     done
-    # make monitor config
-    monitor_end=$(({{ .Values.accumulo.monitor.replicas }} - 1))
-    for i in $(seq 0 $monitor_end);
-      do
-        echo "{{ template "accumulo.fullname" . }}-manager-$i.{{ template "accumulo.name" . }}-monitor-svc" >> /opt/accumulo/conf/monitor;
-    done
+
     # make tserver config
     tserver_end=$(({{ .Values.accumulo.tserver.replicas }} - 1))
     for i in $(seq 0 $tserver_end);
       do
-        echo "{{ template "accumulo.fullname" . }}-ts-$i.{{ template "accumulo.fullname" . }}-ts-svc" >> /opt/accumulo/conf/tservers;
+        echo "{{ template "accumulo.fullname" . }}-ts-$i" >> /opt/accumulo/conf/tservers;
     done
 
-    if [[ "${HOSTNAME}" =~ "accumulo-gc" ]]; then
-      /opt/accumulo/bin/accumulo-service gc start
-      tail -f /opt/accumulo/logs/*
+  manager.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    /opt/accumulo/bin/accumulo-service master start
+    tail -f /opt/accumulo/logs/*
+
+  tserver.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    /opt/accumulo/bin/accumulo-service tserver start
+    tail -f /opt/accumulo/logs/*
+
+  gc.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    /opt/accumulo/bin/accumulo-service gc start
+    tail -f /opt/accumulo/logs/*
+
+  monitor.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    /opt/accumulo/bin/accumulo-service monitor start
+    tail -f /opt/accumulo/logs/*
+
+  init.sh: |
+    #!/bin/bash
+
+    /bin/bash /tmp/accumulo-config/bootstrap.sh
+    # only run init container once even with multiple managers, so on the first manager pod only
+    if [[ "${HOSTNAME}" =~ "accumulo-manager-0" ]]; then
+      if {{ .Values.accumulo.init }}; then
+        $ACCUMULO_HOME/bin/accumulo init \
+        --force \
+        --clear-instance-name \
+        --instance-name {{ .Values.accumulo.instance_name }} \
+        --password {{ .Values.accumulo.passwd }} \
+        --user {{ .Values.accumulo.username }}
+      fi
     fi
 
-    if [[ "${HOSTNAME}" =~ "accumulo-monitor" ]]; then
-      /opt/accumulo/bin/accumulo-service monitor start
-      tail -f /opt/accumulo/logs/*
-    fi
+  ts-wait.sh: |
+    #!/bin/bash
 
-    if [[ "${HOSTNAME}" =~ "accumulo-manager" ]]; then
-      /opt/accumulo/bin/accumulo-service manager start
-      tail -f /opt/accumulo/logs/*
-    fi
+    echo "Waiting for manager on 9999..."
+    while ! nc -z {{ template "accumulo.fullname" . }}-manager-0 9999; do
+      sleep 0.1 # wait for 1/10 of the second before check again
+    done
 
-    if [[ "${HOSTNAME}" =~ "accumulo-ts" ]]; then
-      /opt/accumulo/bin/accumulo-service tserver start
-      tail -f /opt/accumulo/logs/*
-    fi
-
-    #tail -f /opt/accumulo/logs/*

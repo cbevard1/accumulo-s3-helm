@@ -1,5 +1,6 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:latest
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:2.0.1
+imagePullPolicy: Always
 
 # Select anitAffinity as either hard or soft, default is hard
 antiAffinity: "soft"
@@ -10,34 +11,46 @@ s3:
   secret:
 
 accumulo:
+  # run the init script on startup
+  init: false
   gc:
-    replicas: 1
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
+        memory: "500Mi"
+        cpu: 0.5
+    javaOpts:
+      memory: "'-Xmx385m' '-Xms385m'"
   manager:
-    replicas: 1
+    replicas: 2
     resources:
       requests:
         memory: "5Gi"
-        cpu: "1000m"
+        cpu: 2
+    javaOpts:
+      memory: "'-Xmx4g' '-Xms4g'"
   monitor:
-    replicas: 1
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
+        memory: "1Gi"
+        cpu: 1
+    javaOpts:
+      memory: "'-Xmx768m' '-Xms768m'"
   tserver:
-    replicas: 3
+    replicas: 5
     resources:
       requests:
-        memory: "5Gi"
-        cpu: "1000m"
-  volumes: "accS3nf://accumulo.s3/accumulo"
+        memory: "2Gi"
+        cpu: 2
+    javaOpts:
+      memory: "'-Xmx1536m' '-Xms1536m'"
+  volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
-  instance_name: "test"
+  instance_name: "s3"
 
 zookeeper:
-  host: "zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local"
+  host: zookeeper-0.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-1.zookeeper-headless.accumulo.svc.cluster.local,zookeeper-2.zookeeper-headless.accumulo.svc.cluster.local
+  port: 2181
+  containerPort: 2888
+  electionPort: 3888
+  replicas: 3

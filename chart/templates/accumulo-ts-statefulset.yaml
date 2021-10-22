@@ -23,12 +23,24 @@ spec:
     spec:
       dnsConfig:
         searches:
-#        - {{ template "accumulo.fullname" . }}-gc-svc.accumulo.svc.cluster.local
-#        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-manager-svc.accumulo.svc.cluster.local
         - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
       affinity:
       terminationGracePeriodSeconds: 0
+      initContainers:
+      - name: accumulo-ts-wait
+        image: bash
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        command:
+        - "/usr/local/bin/bash"
+        - "/tmp/accumulo-config/ts-wait.sh"
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 0.5
+        volumeMounts:
+          - name: accumulo-config
+            mountPath: /tmp/accumulo-config
       containers:
       - name: accumulo-ts
         image: {{ .Values.accumuloImage }}
@@ -40,21 +52,9 @@ spec:
           value: {{ .Values.s3.secret }}
         command:
         - "/bin/bash"
-        - "/tmp/accumulo-config/bootstrap.sh"
+        - "/tmp/accumulo-config/tserver.sh"
         resources:
 {{ toYaml .Values.accumulo.tserver.resources | indent 10 }}
-#        readinessProbe:
-#          httpGet:
-#            path: /
-#            port: 9997
-#          initialDelaySeconds: 5
-#          timeoutSeconds: 2
-#        livenessProbe:
-#          httpGet:
-#            path: /
-#            port: 9997
-#          initialDelaySeconds: 10
-#          timeoutSeconds: 2
         volumeMounts:
         - name: accumulo-config
           mountPath: /tmp/accumulo-config

@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+ name: acc-s3-intg
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      dnsConfig:
+        searches:
+#        - { { template "accumulo.fullname" . } }-gc-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-monitor-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-manager-svc.accumulo.svc.cluster.local
+#        - {{ template "accumulo.fullname" . }}-ts-svc.accumulo.svc.cluster.local
+        - accumulo-manager-svc.accumulo.svc.cluster.local
+        - accumulo-ts-svc.accumulo.svc.cluster.local
+      restartPolicy: Never
+      containers:
+      - name: acc-s3-intg
+        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:2.0.1
+        imagePullPolicy: Always
+        command:
+          - "/bin/bash"
+          - "/test/run.sh"
+        env:
+          - name: REPO_NAME
+            value: accumulo-s3-fs
+          - name: REPO_BRANCH
+            value: 2.0.1
+          - name: AWS_ACCESS_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: intg-test-configmap
+                key: AWS_ACCESS_KEY
+          - name: AWS_SECRET_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: intg-test-configmap
+                key: AWS_SECRET_KEY
+        volumeMounts:
+          - name: intg-test-config
+            mountPath: /test
+      volumes:
+        - name: intg-test-config
+          configMap:
+            name: intg-test-configmap
