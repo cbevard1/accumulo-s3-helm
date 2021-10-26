@@ -43,7 +43,8 @@ accumulo:
         cpu: 2
     javaOpts:
       memory: "'-Xmx1536m' '-Xms1536m'"
-  volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
+  #volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
+  volumes: "accS3nf://accumulo.s3/accumulo,accS3nf://accumulo.s3/accumulo-wal"
   username: "root"
   passwd: "root"
   instance_name: "s3"
