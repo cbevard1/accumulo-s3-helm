@@ -112,7 +112,8 @@ data:
     #general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
     general.volume.chooser=org.apache.accumulo.server.fs.PreferredVolumeChooser
     general.custom.volume.preferred.default=accS3nf://{{ .Values.s3.bucket }}/accumulo
-    general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
+    general.custom.volume.preferred.logger=accS3nf://{{ .Values.s3.bucket }}/accumulo-wal
+    #general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
     
     ## Use S3LogCloser
     # 2.1.0 property
