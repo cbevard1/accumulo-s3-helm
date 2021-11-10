@@ -35,17 +35,17 @@ RUN wget --no-check-certificate ${ACCUMULO_RELEASE_URL} -O accumulo-${ACCUMULO_V
     mv apache-zookeeper-${ZOOKEEPER_VERSION}-bin ${ZOOKEEPER_HOME};
 
 # build the s3 filesystem jar
-#RUN wget ${S3_FILESYSTEM_URL}; \
-#    unzip ${S3_FILESYSTEM_BRANCH}.zip; \
-#    cd accumulo-s3-fs-${S3_FILESYSTEM_BRANCH}; \
-#    mvn clean package; \
-#    mv target/*.jar ${ACCUMULO_HOME}/lib; \
-#    cp /root/.m2/repository/com/amazonaws/aws-java-sdk-bundle/*/*.jar ${ACCUMULO_HOME}/lib
-#
-## cleanup downloaded tar files
-#RUN rm -rf /tmp/*;
-#
-## build native binaries
+RUN wget ${S3_FILESYSTEM_URL}; \
+    unzip ${S3_FILESYSTEM_BRANCH}.zip; \
+    cd accumulo-s3-fs-${S3_FILESYSTEM_BRANCH}; \
+    mvn clean package; \
+    mv target/*.jar ${ACCUMULO_HOME}/lib; \
+    cp /root/.m2/repository/com/amazonaws/aws-java-sdk-bundle/*/*.jar ${ACCUMULO_HOME}/lib
+
+# cleanup downloaded tar files
+RUN rm -rf /tmp/*;
+
+# build native binaries
 #RUN ${ACCUMULO_HOME}/bin/accumulo-util build-native
 
 WORKDIR ${ACCUMULO_HOME}

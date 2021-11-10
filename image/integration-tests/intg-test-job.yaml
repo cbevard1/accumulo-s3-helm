@@ -17,7 +17,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: acc-s3-intg
-        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:2.0.1
+        image: 347653770938.dkr.ecr.us-east-2.amazonaws.com/acc-s3-intg:1.9.3
         imagePullPolicy: Always
         command:
           - "/bin/bash"
@@ -26,7 +26,7 @@ spec:
           - name: REPO_NAME
             value: accumulo-s3-fs
           - name: REPO_BRANCH
-            value: 2.0.1
+            value: 1.9.3
           - name: AWS_ACCESS_KEY
             valueFrom:
               configMapKeyRef:
