@@ -1,13 +1,14 @@
-FROM openjdk:11
+FROM openjdk:8
 
 RUN apt update; \
     apt install -y iproute2 build-essential wget maven;
 
 ENV ACCUMULO_VERSION=1.9.3
-ENV HADOOP_VERSION=3.3.0
+ENV HADOOP_VERSION=2.10.1
 ENV ZOOKEEPER_VERSION=3.7.0
 ENV ACCUMULO_HOME=/opt/accumulo
 ENV HADOOP_HOME=/opt/hadoop
+ENV HADOOP_PREFIX=/opt/hadoop
 ENV ZOOKEEPER_HOME=/opt/zookeeper
 
 ARG ACCUMULO_RELEASE_URL=https://www.dropbox.com/s/ey1odo5dy75lb0h/accumulo-1.9.3-bin.tar.gz?dl=0
@@ -43,7 +44,7 @@ RUN wget ${S3_FILESYSTEM_URL}; \
     cp /root/.m2/repository/com/amazonaws/aws-java-sdk-bundle/*/*.jar ${ACCUMULO_HOME}/lib
 
 # cleanup downloaded tar files
-RUN rm -rf /tmp/*;
+#RUN rm -rf /tmp/*;
 
 # build native binaries
 #RUN ${ACCUMULO_HOME}/bin/accumulo-util build-native

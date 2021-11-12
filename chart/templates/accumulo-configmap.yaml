@@ -320,6 +320,7 @@ data:
       do
         #echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/managers;
         echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/masters;
+        echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/tracers;
         echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/gc;
         echo "{{ template "accumulo.fullname" . }}-manager-$i" >> /opt/accumulo/conf/monitor;
     done
@@ -358,7 +359,9 @@ data:
 
     /bin/bash /tmp/accumulo-config/bootstrap.sh
     sleep 10s
-    /opt/accumulo/bin/start-server.sh ${HOSTNAME} monitor
+    /opt/accumulo/bin/start-server.sh ${HOSTNAME} tracer
+    sleep 5s
+    /opt/accumulo/bin/start-server.sh localhost monitor
     tail -f /opt/accumulo/logs/*
 
   init.sh: |
