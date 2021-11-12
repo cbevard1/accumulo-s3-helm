@@ -9,139 +9,237 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   accumulo-env.sh: |
-    ## Accumulo logs directory. Referenced by logger config.
-    export ACCUMULO_LOG_DIR="${ACCUMULO_LOG_DIR:-${basedir}/logs}"
-    ## Hadoop installation
-    export HADOOP_HOME="${HADOOP_HOME:-/path/to/hadoop}"
-    ## Hadoop configuration
-    export HADOOP_CONF_DIR="${HADOOP_CONF_DIR:-${HADOOP_HOME}/etc/hadoop}"
-    ## Zookeeper installation
-    export ZOOKEEPER_HOME="${ZOOKEEPER_HOME:-/path/to/zookeeper}"
+    #! /usr/bin/env bash
 
-    ##########################
-    # Build CLASSPATH variable
-    ##########################
-
-    # Verify that Hadoop & Zookeeper installation directories exist
-    if [[ ! -d "$ZOOKEEPER_HOME" ]]; then
-      echo "ZOOKEEPER_HOME=$ZOOKEEPER_HOME is not set to a valid directory in accumulo-env.sh"
-      exit 1
-    fi
-    if [[ ! -d "$HADOOP_HOME" ]]; then
-      echo "HADOOP_HOME=$HADOOP_HOME is not set to a valid directory in accumulo-env.sh"
-      exit 1
-    fi
-
-    ## Build using existing CLASSPATH, conf/ directory, dependencies in lib/, and external Hadoop & Zookeeper dependencies
-    if [[ -n "$CLASSPATH" ]]; then
-      CLASSPATH="${CLASSPATH}:${conf}"
+    if [[ -z $HADOOP_HOME ]] ; then
+       test -z "$HADOOP_PREFIX"      && export HADOOP_PREFIX=/path/to/hadoop
     else
-      CLASSPATH="${conf}"
+       HADOOP_PREFIX="$HADOOP_HOME"
+       unset HADOOP_HOME
     fi
 
-    ZK_JARS=$(find "$ZOOKEEPER_HOME/lib/" -maxdepth 1 -name '*.jar' -not -name '*slf4j*' -not -name '*log4j*' | paste -sd:)
-    CLASSPATH="${CLASSPATH}:${lib}/*:${HADOOP_CONF_DIR}:${ZOOKEEPER_HOME}/lib/*:${ZK_JARS}:${HADOOP_HOME}/share/hadoop/client/*:${HADOOP_HOME}/share/hadoop/common/lib/*"
-    CLASSPATH="/opt/extralibs/*:${CLASSPATH}"
-    export CLASSPATH
+    # hadoop-2.0:
+    test -z "$HADOOP_CONF_DIR"       && export HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/hadoop"
 
-    ##################################################################
-    # Build JAVA_OPTS variable. Defaults below work but can be edited.
-    ##################################################################
+    test -z "$JAVA_HOME"             && export JAVA_HOME=/path/to/java
+    test -z "$ZOOKEEPER_HOME"        && export ZOOKEEPER_HOME=/path/to/zookeeper
+    test -z "$ACCUMULO_LOG_DIR"      && export ACCUMULO_LOG_DIR=$ACCUMULO_HOME/logs
+    if [[ -f ${ACCUMULO_CONF_DIR}/accumulo.policy ]]
+    then
+       POLICY="-Djava.security.manager -Djava.security.policy=${ACCUMULO_CONF_DIR}/accumulo.policy"
+    fi
+    test -z "$ACCUMULO_TSERVER_OPTS" && export ACCUMULO_TSERVER_OPTS="${POLICY} -Xmx384m -Xms384m "
+    test -z "$ACCUMULO_MASTER_OPTS"  && export ACCUMULO_MASTER_OPTS="${POLICY} -Xmx128m -Xms128m"
+    test -z "$ACCUMULO_MONITOR_OPTS" && export ACCUMULO_MONITOR_OPTS="${POLICY} -Xmx64m -Xms64m"
+    test -z "$ACCUMULO_GC_OPTS"      && export ACCUMULO_GC_OPTS="-Xmx64m -Xms64m"
+    test -z "$ACCUMULO_SHELL_OPTS"   && export ACCUMULO_SHELL_OPTS="-Xmx128m -Xms64m"
+    test -z "$ACCUMULO_GENERAL_OPTS" && export ACCUMULO_GENERAL_OPTS="-XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true -XX:+CMSClassUnloadingEnabled"
+    test -z "$ACCUMULO_OTHER_OPTS"   && export ACCUMULO_OTHER_OPTS="-Xmx128m -Xms64m"
+    test -z "${ACCUMULO_PID_DIR}"    && export ACCUMULO_PID_DIR="${ACCUMULO_HOME}/run"
+    # what do when the JVM runs out of heap memory
+    export ACCUMULO_KILL_CMD='kill -9 %p'
 
-    ## JVM options set for all processes. Extra options can be passed in by setting ACCUMULO_JAVA_OPTS to an array of options.
-    JAVA_OPTS=("${ACCUMULO_JAVA_OPTS[@]}"
-      '-XX:OnOutOfMemoryError=kill -9 %p'
-      '-XX:-OmitStackTraceInFastThrow'
-      '-Djava.net.preferIPv4Stack=true'
-      "-Daccumulo.native.lib.path=${lib}/native")
+    # export LD_LIBRARY_PATH=${HADOOP_PREFIX}/lib/native/${PLATFORM}:${LD_LIBRARY_PATH}
 
-    ## Make sure Accumulo native libraries are built since they are enabled by default
-    "${bin}"/accumulo-util build-native &> /dev/null
+    # Should the monitor bind to all network interfaces -- default: false
+    # export ACCUMULO_MONITOR_BIND_ALL="true"
 
-    ## JVM options set for individual applications
-    case "$cmd" in
-      manager|master)  JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.manager.javaOpts.memory }}) ;;
-      monitor) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.monitor.javaOpts.memory }}) ;;
-      gc)      JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.gc.javaOpts.memory }}) ;;
-      tserver) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.tserver.javaOpts.memory }}) ;;
-      *)       JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms64m') ;;
-    esac
+    # Should process be automatically restarted
+    # export ACCUMULO_WATCHER="true"
 
-    ## JVM options set for logging. Review log4j2.properties file to see how they are used.
-    JAVA_OPTS=("${JAVA_OPTS[@]}"
-      "-Daccumulo.log.dir=${ACCUMULO_LOG_DIR}"
-      "-Daccumulo.application=${cmd}${ACCUMULO_SERVICE_INSTANCE}_$(hostname)"
-      "-Daccumulo.metrics.service.instance=${ACCUMULO_SERVICE_INSTANCE}"
-      "-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector"
-    )
+    # What settings should we use for the watcher, if enabled
+    export UNEXPECTED_TIMESPAN="3600"
+    export UNEXPECTED_RETRIES="2"
 
-    case "$cmd" in
-      monitor|gc|manager|master|tserver|tracer|compaction-coordinator|compactor)
-        JAVA_OPTS=("${JAVA_OPTS[@]}" "-Dlog4j.configurationFile=log4j2-service.properties")
-        ;;
-      *)
-        # let log4j use its default behavior (log4j2.properties, etc.)
-        true
-        ;;
-    esac
+    export OOM_TIMESPAN="3600"
+    export OOM_RETRIES="5"
 
-    export JAVA_OPTS
+    export ZKLOCK_TIMESPAN="600"
+    export ZKLOCK_RETRIES="5"
 
-    ############################
-    # Variables set to a default
-    ############################
+    # The number of .out and .err files per process to retain
+    # export ACCUMULO_NUM_OUT_FILES=5
 
-    export MALLOC_ARENA_MAX=${MALLOC_ARENA_MAX:-1}
-    ## Add Hadoop native libraries to shared library paths given operating system
-    case "$(uname)" in
-      Darwin) export DYLD_LIBRARY_PATH="${HADOOP_HOME}/lib/native:${DYLD_LIBRARY_PATH}" ;;
-      *)      export LD_LIBRARY_PATH="${HADOOP_HOME}/lib/native:${LD_LIBRARY_PATH}" ;;
-    esac
+    export NUM_TSERVERS=1
 
-    ###############################################
-    # Variables that are optional. Uncomment to set
-    ###############################################
+  accumulo-site.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!--
+      Licensed to the Apache Software Foundation (ASF) under one or more
+      contributor license agreements.  See the NOTICE file distributed with
+      this work for additional information regarding copyright ownership.
+      The ASF licenses this file to You under the Apache License, Version 2.0
+      (the "License"); you may not use this file except in compliance with
+      the License.  You may obtain a copy of the License at
 
-    ## Specifies command that will be placed before calls to Java in accumulo script
-    # export ACCUMULO_JAVA_PREFIX=""
+          http://www.apache.org/licenses/LICENSE-2.0
 
-  accumulo.properties: |
-    instance.volumes={{ .Values.accumulo.volumes }}
-    
-    # Configure FS implementations to be used by Accumulo
-    #general.volume.chooser=org.apache.accumulo.core.spi.fs.PreferredVolumeChooser
-    general.volume.chooser=org.apache.accumulo.server.fs.PreferredVolumeChooser
-    general.custom.volume.preferred.default=accS3nf://{{ .Values.s3.bucket }}/accumulo
-    general.custom.volume.preferred.logger=accS3nf://{{ .Values.s3.bucket }}/accumulo-wal
-    #general.custom.volume.preferred.logger=accS3mo://{{ .Values.s3.bucket }}/accumulo-wal
-    
-    ## Use S3LogCloser
-    # 2.1.0 property
-    #manager.wal.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
-    master.walog.closer.implementation=org.apache.accumulo.s3.manager.S3LogCloser
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      See the License for the specific language governing permissions and
+      limitations under the License.
+    -->
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
-    ## Sets location of Zookeepers
-    instance.zookeeper.host={{ .Values.zookeeper.host }}
+    <configuration>
+      <!-- Put your site-specific accumulo configurations here. The available configuration values along with their defaults are documented in docs/config.html Unless
+        you are simply testing at your workstation, you will most definitely need to change the three entries below. -->
 
-    ## Change secret before initialization. All Accumulo servers must have same secret
-    instance.secret=DEFAULT
+      <property>
+        <name>instance.volumes</name>
+        <value>accS3nf://accumulo.s3/accumulo,accS3nf://accumulo.s3/accumulo-wal</value>
+        <description>comma separated list of URIs for volumes. example: hdfs://localhost:9000/accumulo</description>
+      </property>
 
-    ## Set to false if 'accumulo-util build-native' fails
-    tserver.memory.maps.native.enabled=true
+      <property>
+        <name>instance.zookeeper.host</name>
+        <value>{{ .Values.zookeeper.host }}</value>
+        <description>comma separated list of zookeeper servers</description>
+      </property>
 
-    ## Trace user
-    trace.user=root
+      <property>
+        <name>instance.secret</name>
+        <value>DEFAULT</value>
+        <description>A secret unique to a given instance that all servers must know in order to communicate with one another.
+          Change it before initialization. To
+          change it later use ./bin/accumulo org.apache.accumulo.server.util.ChangeSecret --old [oldpasswd] --new [newpasswd],
+          and then update this file.
+        </description>
+      </property>
 
-    ## Trace password
-    trace.password=secret
+      <property>
+        <name>tserver.memory.maps.max</name>
+        <value>256M</value>
+      </property>
 
-  accumulo-client.properties: |
-    instance.name={{ .Values.accumulo.instance_name }}
-    instance.zookeepers={{ .Values.zookeeper.host }}
-    #instance.zookeepers.timeout=30s
-    auth.type=password
-    auth.principal={{ .Values.accumulo.username }}
-    auth.token={{ .Values.accumulo.passwd }}
+      <property>
+        <name>tserver.memory.maps.native.enabled</name>
+        <value>false</value>
+      </property>
+
+      <property>
+        <name>tserver.cache.data.size</name>
+        <value>15M</value>
+      </property>
+
+      <property>
+        <name>tserver.cache.index.size</name>
+        <value>40M</value>
+      </property>
+
+      <property>
+        <name>tserver.total.mutation.queue.max</name>
+        <value>16M</value>
+      </property>
+
+      <property>
+        <name>trace.token.property.password</name>
+        <!-- change this to the root user's password, and/or change the user below -->
+        <value>root</value>
+      </property>
+
+      <!-- Kerberos requirements --><!--
+      --><!-- End Kerberos requirements -->
+
+      <property>
+        <name>trace.user</name>
+        <value>root</value>
+      </property>
+
+      <property>
+        <name>tserver.sort.buffer.size</name>
+        <value>50M</value>
+      </property>
+
+      <property>
+        <name>tserver.walog.max.size</name>
+        <value>256M</value>
+      </property>
+
+      <property>
+        <name>general.classpaths</name>
+
+        <value>
+          <!-- Accumulo requirements -->
+          $ACCUMULO_HOME/lib/accumulo-server.jar,
+          $ACCUMULO_HOME/lib/accumulo-core.jar,
+          $ACCUMULO_HOME/lib/accumulo-start.jar,
+          $ACCUMULO_HOME/lib/accumulo-fate.jar,
+          $ACCUMULO_HOME/lib/accumulo-proxy.jar,
+          $ACCUMULO_HOME/lib/[^.].*.jar,
+          <!-- ZooKeeper requirements -->
+          $ZOOKEEPER_HOME/zookeeper[^.].*.jar,
+          <!-- Common Hadoop requirements -->
+          $HADOOP_CONF_DIR,
+          <!-- Hadoop 2 requirements -->
+          $HADOOP_PREFIX/share/hadoop/common/[^.].*.jar,
+          $HADOOP_PREFIX/share/hadoop/common/lib/(?!slf4j)[^.].*.jar,
+          $HADOOP_PREFIX/share/hadoop/hdfs/[^.].*.jar,
+          $HADOOP_PREFIX/share/hadoop/mapreduce/[^.].*.jar,
+          $HADOOP_PREFIX/share/hadoop/yarn/[^.].*.jar,
+          $HADOOP_PREFIX/share/hadoop/yarn/lib/jersey.*.jar,
+          <!-- End Hadoop 2 requirements -->
+          <!-- HDP 2.0 requirements --><!--
+          /usr/lib/hadoop/[^.].*.jar,
+          /usr/lib/hadoop/lib/[^.].*.jar,
+          /usr/lib/hadoop-hdfs/[^.].*.jar,
+          /usr/lib/hadoop-mapreduce/[^.].*.jar,
+          /usr/lib/hadoop-yarn/[^.].*.jar,
+          /usr/lib/hadoop-yarn/lib/jersey.*.jar,
+          --><!-- End HDP 2.0 requirements -->
+          <!-- HDP 2.2 requirements --><!--
+          /usr/hdp/current/hadoop-client/[^.].*.jar,
+          /usr/hdp/current/hadoop-client/lib/(?!slf4j)[^.].*.jar,
+          /usr/hdp/current/hadoop-hdfs-client/[^.].*.jar,
+          /usr/hdp/current/hadoop-mapreduce-client/[^.].*.jar,
+          /usr/hdp/current/hadoop-yarn-client/[^.].*.jar,
+          /usr/hdp/current/hadoop-yarn-client/lib/jersey.*.jar,
+          /usr/hdp/current/hive-client/lib/hive-accumulo-handler.jar
+          --><!-- End HDP 2.2 requirements -->
+          <!-- IOP 4.1 requirements --><!--
+          /usr/iop/current/hadoop-client/[^.].*.jar,
+          /usr/iop/current/hadoop-client/lib/(?!slf4j)[^.].*.jar,
+          /usr/iop/current/hadoop-hdfs-client/[^.].*.jar,
+          /usr/iop/current/hadoop-mapreduce-client/[^.].*.jar,
+          /usr/iop/current/hadoop-yarn-client/[^.].*.jar,
+          /usr/iop/current/hadoop-yarn-client/lib/jersey.*.jar,
+          /usr/iop/current/hive-client/lib/hive-accumulo-handler.jar
+          --><!-- End IOP 4.1 requirements -->
+          <!-- Hadoop 3 requirements --><!--
+          $HADOOP_PREFIX/share/hadoop/client/[^.].*.jar,
+          --><!-- End Hadoop 3 requirements -->
+        </value>
+        <description>Classpaths that accumulo checks for updates and class files.</description>
+      </property>
+    </configuration>
+
+  log4j.properties: |
+    log4j.rootLogger=INFO,A1
+
+    # hide Jetty junk
+    log4j.logger.org.mortbay.log=WARN,A1
+
+    # hide "Got brand-new compressor" messages
+    log4j.logger.org.apache.hadoop.io.compress=WARN,A1
+    log4j.logger.org.apache.accumulo.core.file.rfile.bcfile.Compression=WARN,A1
+
+    # hide junk from TestRandomDeletes
+    log4j.logger.org.apache.accumulo.test.TestRandomDeletes=WARN,A1
+
+    # hide junk from VFS
+    log4j.logger.org.apache.commons.vfs2.impl.DefaultFileSystemManager=WARN,A1
+
+    # hide almost everything from zookeeper
+    log4j.logger.org.apache.zookeeper=ERROR,A1
+
+    # hide AUDIT messages in the shell, alternatively you could send them to a different logger
+    log4j.logger.org.apache.accumulo.shell.Shell.audit=WARN,A1
+
+    # Send most things to the console
+    log4j.appender.A1=org.apache.log4j.ConsoleAppender
+    log4j.appender.A1.layout.ConversionPattern=%d{ISO8601} [%-8c{2}] %-5p: %m%n
+    log4j.appender.A1.layout=org.apache.log4j.PatternLayout
 
   core-site.xml: |
     <configuration>
@@ -197,7 +295,7 @@ data:
     CONFIG_DIR="/tmp/accumulo-config"
 
     # Copy accumulo config files from volume mount
-    for f in accumulo.properties accumulo-env.sh accumulo-client.properties; do
+    for f in accumulo-site.xml accumulo-env.sh log4j.properties; do
       if [[ -e ${CONFIG_DIR}/$f ]]; then
         cp ${CONFIG_DIR}/$f /opt/accumulo/conf/$f
       else
@@ -230,35 +328,37 @@ data:
     tserver_end=$(({{ .Values.accumulo.tserver.replicas }} - 1))
     for i in $(seq 0 $tserver_end);
       do
-        echo "{{ template "accumulo.fullname" . }}-ts-$i" >> /opt/accumulo/conf/tservers;
+        echo "{{ template "accumulo.fullname" . }}-ts-$i" >> /opt/accumulo/conf/slaves;
     done
 
   manager.sh: |
     #!/bin/bash
 
     /bin/bash /tmp/accumulo-config/bootstrap.sh
-    /opt/accumulo/bin/accumulo-service master start
+    /opt/accumulo/bin/start-server.sh ${HOSTNAME} master
     tail -f /opt/accumulo/logs/*
 
   tserver.sh: |
     #!/bin/bash
 
     /bin/bash /tmp/accumulo-config/bootstrap.sh
-    /opt/accumulo/bin/accumulo-service tserver start
+    /opt/accumulo/bin/start-server.sh ${HOSTNAME} tserver
     tail -f /opt/accumulo/logs/*
 
   gc.sh: |
     #!/bin/bash
 
     /bin/bash /tmp/accumulo-config/bootstrap.sh
-    /opt/accumulo/bin/accumulo-service gc start
+    sleep 10s
+    /opt/accumulo/bin/start-server.sh ${HOSTNAME} gc
     tail -f /opt/accumulo/logs/*
 
   monitor.sh: |
     #!/bin/bash
 
     /bin/bash /tmp/accumulo-config/bootstrap.sh
-    /opt/accumulo/bin/accumulo-service monitor start
+    sleep 10s
+    /opt/accumulo/bin/start-server.sh ${HOSTNAME} monitor
     tail -f /opt/accumulo/logs/*
 
   init.sh: |
@@ -270,7 +370,6 @@ data:
     if [[ "${HOSTNAME}" =~ "accumulo-manager-0" ]]; then
       if {{ .Values.accumulo.init }}; then
         $ACCUMULO_HOME/bin/accumulo init \
-        --force \
         --clear-instance-name \
         --instance-name {{ .Values.accumulo.instance_name }} \
         --password {{ .Values.accumulo.passwd }} \
@@ -282,7 +381,8 @@ data:
     #!/bin/bash
 
     echo "Waiting for manager on 9999..."
-    while ! nc -z {{ template "accumulo.fullname" . }}-manager-0 9999; do
-      sleep 0.1 # wait for 1/10 of the second before check again
-    done
+    sleep 20s
+    #while ! nc -z {{ template "accumulo.fullname" . }}-manager-0 9999; do
+    #  sleep 0.1 # wait for 1/10 of the second before check again
+    #done
 

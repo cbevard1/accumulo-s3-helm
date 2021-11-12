@@ -1,5 +1,5 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:endpoint
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:1.9.3
 imagePullPolicy: Always
 
 # Select anitAffinity as either hard or soft, default is hard
@@ -23,7 +23,7 @@ accumulo:
     javaOpts:
       memory: "'-Xmx385m' '-Xms385m'"
   manager:
-    replicas: 2
+    replicas: 1
     resources:
       requests:
         memory: "5Gi"
