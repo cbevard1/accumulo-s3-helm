@@ -284,5 +284,7 @@ data:
     echo "Waiting for manager on 9999..."
     while ! nc -z {{ template "accumulo.fullname" . }}-manager-0 9999; do
       sleep 0.1 # wait for 1/10 of the second before check again
+      echo "still waiting..."
     done
+    echo "done waiting..."
 

@@ -6,11 +6,11 @@ imagePullPolicy: Always
 antiAffinity: "soft"
 
 s3:
-  bucket: "accumulo.s3"
+  bucket: "accumulo"
   key:
   secret:
-  endpoint: http://192.168.58.87:9000
-  region: us-east-2
+#  endpoint: http://192.168.58.87:9000
+#  region: us-east-2
 
 accumulo:
   # run the init script on startup
@@ -23,7 +23,7 @@ accumulo:
     javaOpts:
       memory: "'-Xmx385m' '-Xms385m'"
   manager:
-    replicas: 2
+    replicas: 1
     resources:
       requests:
         memory: "5Gi"
@@ -46,7 +46,7 @@ accumulo:
     javaOpts:
       memory: "'-Xmx1536m' '-Xms1536m'"
   #volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
-  volumes: "accS3nf://accumulo.s3/accumulo,accS3nf://accumulo.s3/accumulo-wal"
+  volumes: "accS3nf://accumulo/accumulo,accS3nf://accumulo/accumulo-wal"
   username: "root"
   passwd: "root"
   instance_name: "s3"
