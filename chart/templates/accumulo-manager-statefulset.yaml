@@ -52,6 +52,12 @@ spec:
       - name: accumulo-manager
         image: {{ .Values.accumuloImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        livenessProbe:
+          tcpSocket:
+            port: 9999
+          initialDelaySeconds: 15
+          periodSeconds: 60
+          failureThreshold: 2
         env:
         - name: AWS_ACCESS_KEY_ID
           value: {{ .Values.s3.key }}
@@ -69,6 +75,12 @@ spec:
       - name: accumulo-monitor
         image: {{ .Values.accumuloImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        livenessProbe:
+          tcpSocket:
+            port: 9995
+          initialDelaySeconds: 15
+          periodSeconds: 60
+          failureThreshold: 2
         env:
         - name: AWS_ACCESS_KEY_ID
           value: {{ .Values.s3.key }}
@@ -86,6 +98,12 @@ spec:
       - name: accumulo-gc
         image: {{ .Values.accumuloImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        livenessProbe:
+          tcpSocket:
+            port: 9998
+          initialDelaySeconds: 15
+          periodSeconds: 60
+          failureThreshold: 2
         env:
         - name: AWS_ACCESS_KEY_ID
           value: {{ .Values.s3.key }}

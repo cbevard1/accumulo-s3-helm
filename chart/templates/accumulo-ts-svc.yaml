@@ -20,6 +20,10 @@ spec:
       protocol: TCP
       port: 10002
       targetPort: 10002
+    - name: monitor-centralized-logs
+      protocol: TCP
+      port: 4560
+      targetPort: 4560
   selector:
     app: {{ template "accumulo.name" . }}
     component: accumulo-ts

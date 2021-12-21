@@ -45,6 +45,12 @@ spec:
       - name: accumulo-ts
         image: {{ .Values.accumuloImage }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
+        livenessProbe:
+          tcpSocket:
+            port: 9997
+          initialDelaySeconds: 15
+          periodSeconds: 60
+          failureThreshold: 2
         env:
         - name: AWS_ACCESS_KEY_ID
           value: {{ .Values.s3.key }}

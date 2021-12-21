@@ -21,6 +21,10 @@ spec:
       protocol: TCP
       port: 9995
       targetPort: 9995
+    - name: monitor-centralized-logs
+      protocol: TCP
+      port: 4560
+      targetPort: 4560
     - name: monitor
       protocol: TCP
       port: 50095
