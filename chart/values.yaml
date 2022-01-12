@@ -1,5 +1,5 @@
 # The base accumulo image to use for all components.
-accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:datawave
+accumuloImage: 347653770938.dkr.ecr.us-east-2.amazonaws.com/accumulo-s3:s3a
 imagePullPolicy: Always
 
 # Select anitAffinity as either hard or soft, default is hard
@@ -45,8 +45,7 @@ accumulo:
         cpu: 2
     javaOpts:
       memory: "'-Xmx1536m' '-Xms1536m'"
-  #volumes: "accS3nf://accumulo.s3/accumulo,accS3mo://accumulo.s3/accumulo-wal"
-  volumes: "accS3nf://accumulo/accumulo,accS3nf://accumulo/accumulo-wal"
+  volumes: "s3a://accumulo/accumulo,s3a://accumulo/accumulo-wal"
   username: "root"
   passwd: "root"
   instance_name: "s3"
