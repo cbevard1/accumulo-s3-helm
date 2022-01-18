@@ -38,7 +38,7 @@ accumulo:
     javaOpts:
       memory: "'-Xmx768m' '-Xms768m'"
   tserver:
-    replicas: 1
+    replicas: 5
     resources:
       requests:
         memory: "2Gi"
