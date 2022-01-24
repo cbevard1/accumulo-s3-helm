@@ -124,11 +124,29 @@ data:
         </property>
         <property>
             <name>fs.s3a.access.key</name>
-            <value></value>
+            <value>{{ .Values.s3.key }}</value>
         </property>
         <property>
             <name>fs.s3a.secret.key</name>
-            <value></value>
+            <value>{{ .Values.s3.secret }}</value>
+        </property>
+
+        {{ if .Values.s3.endpoint }}
+        <property>
+            <name>fs.s3a.endpoint</name>
+            <value>{{ .Values.s3.endpoint }}</value>
+        </property>
+        {{ end }}
+        {{ if .Values.s3.region }}
+        <property>
+            <name>fs.s3a.region</name>
+            <value>{{ .Values.s3.region }}</value>
+        </property>
+        {{ end }}
+
+        <property>
+            <name>fs.s3a.connection.ssl.enabled</name>
+            <value>false</value>
         </property>
         <!--
         <property>
