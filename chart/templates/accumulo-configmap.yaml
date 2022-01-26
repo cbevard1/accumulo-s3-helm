@@ -46,10 +46,10 @@ data:
 
     ## JVM options set for individual applications
     case "$cmd" in
-      manager|master)  JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx512m' '-Xms512m') ;;
-      monitor) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms256m') ;;
-      gc)      JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms256m') ;;
-      tserver) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx768m' '-Xms768m') ;;
+      manager|master)  JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.manager.javaOpts.memory }}) ;;
+      monitor) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.monitor.javaOpts.memory }}) ;;
+      gc)      JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.gc.javaOpts.memory }}) ;;
+      tserver) JAVA_OPTS=("${JAVA_OPTS[@]}" {{ .Values.accumulo.tserver.javaOpts.memory }}) ;;
       compaction-coordinator) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx512m' '-Xms512m') ;;
       compactor) JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms256m') ;;
       *)       JAVA_OPTS=("${JAVA_OPTS[@]}" '-Xmx256m' '-Xms64m') ;;
